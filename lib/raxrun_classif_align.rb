@@ -23,8 +23,8 @@ $algo = "q"
 def strtime
     return Time.now.strftime( "%Y_%m_%d__%H_%M_%S" );
 end
-$prot_name = strtime + ".txt"
-$protverbose_name = strtime + ".v.txt"
+$prot_name = strtime + "_#{Process.pid}.txt"
+$protverbose_name = strtime + "_#{Process.pid}.v.txt"
 
 $prot = File.new( $prot_name, "w" );
 
