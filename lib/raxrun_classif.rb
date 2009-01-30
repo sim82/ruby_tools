@@ -12,8 +12,13 @@ $seq_end = ARGV[3].to_i
 $gap_start = ARGV[4].to_i
 $gap_end = ARGV[5].to_i
 
+$raxxtra = ""
 
-$raxml_bin = "~/src/raxml720/raxmlHPC-PTHREADS"
+if ARGV[6] == "-u"
+	$raxxtra = "_ubuntu"
+end
+
+$raxml_bin = "~/src/raxml720#{$raxxtra}/raxmlHPC-PTHREADS"
 $misc_param = "-T 4 -x 1234"
 $algo = "y"
 
@@ -25,11 +30,10 @@ $seq_pad = 4;
 
 
 $seq_start.upto($seq_end) do |seq|
-    seq = "#{"0" * [0,$seq_pad - seq.to_s.length].max}#{seq}"
-
     $gap_end.step($gap_start, -10) do |gap|
     #left pad sequence number
-    
+        seq = "#{"0" * [0,$seq_pad - seq.to_s.length].max}#{seq}"
+
         tree = "#{$tree_dir}/RAxML_bipartitions.#{$dataset}.BEST.WITH_#{seq}"
         align = "#{$degalign_dir}/#{$dataset}_#{seq}_#{gap}"
         name = "#{$dataset}_#{$model}_#{$algo}_#{seq}_#{gap}"
