@@ -30,9 +30,10 @@ $seq_pad = 4;
 
 
 $seq_start.upto($seq_end) do |seq|
+    seq = "#{"0" * [0,$seq_pad - seq.to_s.length].max}#{seq}"
     $gap_end.step($gap_start, -10) do |gap|
     #left pad sequence number
-        seq = "#{"0" * [0,$seq_pad - seq.to_s.length].max}#{seq}"
+        
 
         tree = "#{$tree_dir}/RAxML_bipartitions.#{$dataset}.BEST.WITH_#{seq}"
         align = "#{$degalign_dir}/#{$dataset}_#{seq}_#{gap}"
