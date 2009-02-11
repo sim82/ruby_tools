@@ -1,8 +1,10 @@
 
 
 if ARGV.length < 6
+
 	puts "usage: raxrun <dataset> <model> <seq_start> <seq_end> <gap_start> <gap_end>"
 	throw "missing arguments"
+
 end
 
 $dataset = ARGV[0]
@@ -30,6 +32,7 @@ $seq_pad = 4;
 def strtime
 	return Time.now.strftime( "%Y_%m_%d__%H_%M_%S" );
 end
+
 $prot_name = strtime + "_#{Process.pid}.txt"
 $protverbose_name = strtime + "_#{Process.pid}.v.txt"
 
