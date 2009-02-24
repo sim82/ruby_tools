@@ -11,32 +11,61 @@ $seq_start = ARGV[2].to_i
 $seq_end = ARGV[3].to_i
 $gap_start = ARGV[4].to_i
 $gap_end = ARGV[5].to_i
+$n_scripts = ARGV[6].to_i
 
 $raxxtra = ""
+#~/local/raxml720/raxmlHPC-PTHREADS -T 8 -f v -m GTRGAMMA -t ~/data/redtree/RAxML_bipartitions.714.BEST.WITH_0000 -s ~/data/red_alignments/714_0000_20 -n 714_GTRGAMMA_v_0000_20 -N 100 -x 1234
 
 # if ARGV[6] == "-u"
 # 	$raxxtra = "_ubuntu"
 # end
 
-$raxml_bin = "~/src/raxml720#{$raxxtra}/raxmlHPC-PTHREADS"
-$misc_param = "-T 4 -x 1234"
+$raxml_bin = "~/local/raxml-hpc#{$raxxtra}/raxmlHPC"
+$misc_param = "-x 1234"
 
-if ARGV[6] == "-v"
-	$algo = "v"
-else
-	$algo = "y"
-end
+$algo = "v"
 
 
-$degalign_dir = "~/data/degen_alignments"
+$degalign_dir = "~/data/red_alignments"
 $tree_dir = "~/data/redtree"
 $seq_pad = 4;
 
+$num_seq = ($seq_end - $seq_start + 1)
 
+$seq_per_script = $num_seq / $n_scripts
+$mod = $num_seq % $n_scripts
+
+puts( "#{$num_seq} #{$n_scripts} #{$seq_per_script} #{$mod}" );
+
+$ns = 1
+
+def open_script( n ) 
+	return File.new( "run_#{n}.sh", "w" );
+end
+
+$sh = open_script( $ns );
+
+$seqn = 0
 
 $seq_start.upto($seq_end) do |seq|
+	
+	if $ns <= $mod
+		extra = 1
+	else
+		extra = 0
+	end
+
+	if $seqn >= $seq_per_script + extra
+		$sh.close
+		$seqn = 0
+
+		$ns = $ns + 1
+		$sh = open_script( $ns );
+
+	end
+	$seqn = $seqn + 1
     seq = "#{"0" * [0,$seq_pad - seq.to_s.length].max}#{seq}"
-    $gap_end.step($gap_start, -10) do |gap|
+    $gap_start.step($gap_end, 10) do |gap|
     #left pad sequence number
         
 
@@ -48,10 +77,11 @@ $seq_start.upto($seq_end) do |seq|
 
         cmd = "#{$raxml_bin} #{$misc_param} -f #{$algo} -m #{$model} -t #{tree} -s #{align} -n #{name} -\# #{num_bs}"
 
-        puts cmd
+        $sh.puts cmd
 
 
     end
 end
 
 
+$sh.close
