@@ -119,31 +119,52 @@ if $backend == "rrze"
 
 	lf.close
 elsif $backend == "ibc"
-	lf = File.open( "jobs.txt", "w" )
+	$n_scripts = 112
+	
+	$njobs_per_script = $njobs / $n_scripts
+	$mod = $njobs % $n_scripts
 
-	$joblist.each do |(seq,gap,isgz,align_dir)|
-		jobname = "#{$dataset}_#{$model}_#{$algo}_#{seq}_#{gap}"
+	#
+	# output 'n_scripts' runner scripts with (hopefully) good job distribution
+	#
 
+	$ns = 1
 
-		outname = "out/#{jobname}.txt"
-		errname = "err/#{jobname}.txt"
-		shname = "#{$jobdir}/#{jobname}.sh"
-		lf.puts shname
-
-		File.open( shname, "w" ) do |f|
-
-			tree = "#{$data_dir}/redtree/RAxML_bipartitions.#{$dataset}.BEST.WITH_#{seq}"
-			align = "#{align_dir}/#{$dataset}_#{seq}_#{gap}"
-			align += ".gz" if isgz
-
-			f.puts "#!/bin/bash -l"
-			f.puts ""
-			f.puts "#{$raxml_bin} -x 1234 -f #{$algo} -m #{$model} -t #{tree} -s #{align} -n #{jobname} -# 100"
-			f.puts ""
-		end
+	def open_script( n ) 
+		return File.new( "#{$jobdir}/run_#{n}.sh", "w" );
 	end
 
-	lf.close
+	$sh = open_script( $ns );
+
+	$jobn = 0
+
+	$joblist.each do |(seq,gap,isgz,align_dir)|
+		if $ns <= $mod
+			extra = 1
+		else
+			extra = 0
+		end
+		
+		if $jobn >= $njobs_per_script + extra
+			$sh.close
+			$jobn = 0
+
+			$ns = $ns + 1
+			$sh = open_script( $ns );
+		end
+		$jobn = $jobn + 1
+
+		jobname = "#{$dataset}_#{$model}_#{$algo}_#{seq}_#{gap}"
+
+		tree = "#{$data_dir}/redtree/RAxML_bipartitions.#{$dataset}.BEST.WITH_#{seq}"
+		align = "#{align_dir}/#{$dataset}_#{seq}_#{gap}"
+		align += ".gz" if isgz
+
+		$sh.puts "#{$raxml_bin} -x 1234 -f #{$algo} -m #{$model} -t #{tree} -s #{align} -n #{jobname} -# 100"
+# 		$sh.puts ""
+	end
+
+
 else
 	throw "bad backend identifier"
 end
