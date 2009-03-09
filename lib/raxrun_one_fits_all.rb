@@ -54,7 +54,11 @@ if $experiment == "subseq"
 
 			align = "#{$degalign_dir_host}/#{$dataset}_#{seq}_#{gap}"
 
-			if File.exist?(align) or File.exist?(align + ".gz")
+			xtrafilter = true;
+
+# 			xtrafilter = ! File.exist?( "/space/lcbb_out/rsync/855_subseq_GTRGAMMA_q_ibc/RAxML_classification.855_GTRGAMMA_q_#{seq}_#{gap}" );
+
+			if xtrafilter and (File.exist?(align) or File.exist?(align + ".gz"))
 				$njobs += 1
 				$joblist << [seq, gap, File.exist?(align + ".gz"), "#{$data_dir}/subseq_alignments"];
 			end
@@ -119,7 +123,7 @@ if $backend == "rrze"
 
 	lf.close
 elsif $backend == "ibc"
-	$n_scripts = 112
+	$n_scripts = 128
 	
 	$njobs_per_script = $njobs / $n_scripts
 	$mod = $njobs % $n_scripts

@@ -51,9 +51,9 @@ if ARGV.length > 0 and ARGV[0] == "--auto"
 		seq = 0
 		gap = 0
 
-		if f =~ /(\d+)\_(\d+)$/
-			seq = $1.to_i
-			gap = $2.to_i
+		if f =~ /(\d+)\_([\d]+\w)$/
+			seq = $1
+			gap = $2
 		end
 
 		instr = File.open( f, "r" )
