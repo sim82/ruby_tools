@@ -36,13 +36,3 @@ def readphy( fh )
 
     return [names, seqs, cols, lines];
 end
-
-
-
-(names,seqs,cols,lines) = readphy( $stdin )
-
-names.each do |name|
-	#seq = seqs[name].upcase.tr( '^ACGT', "" )
-	seq = seqs[name].upcase.tr( '-?', "" )
-	puts( ">#{name}\n#{seq}" )
-end

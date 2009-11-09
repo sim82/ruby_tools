@@ -1,7 +1,8 @@
 
 	# Seq389  I33     I86     1       5       0.091897        0.046348        1.982763        1.975637
+require( 'stringio' )
 
-def do_rmsd( instr, outstr, seq, gap ) 
+def do_rmsd( instr, outstr, seq, gap, tee ) 
 	node_dist_sq = 0.0
 	ref_dist_sq = 0.0
 	ref_dist_norm_sq = 0.0
@@ -9,10 +10,22 @@ def do_rmsd( instr, outstr, seq, gap )
 	taxon = nil
 	oinpos = nil
 
+
+	nreps = 0
+	instr.each_line do |l|
+        if l =~ /^\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/
+			nreps += $1.to_i
+		end
+	end
+	instr.rewind
 	instr.each_line do |l|
 
 		if l =~ /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/
-			taxon = $1
+			if( tee ) 
+                puts "# #{l}"
+            end
+            
+            taxon = $1
 			inpos = $2
 			oinpos = $3
 			bs = $4.to_i
@@ -22,7 +35,7 @@ def do_rmsd( instr, outstr, seq, gap )
 			diam_ref = $8.to_f
 			#diam_olt = $9.to_f
 
-			bsf = bs / 100.0
+			bsf = bs / nreps.to_f
 
 			node_dist_sq += bsf * (node_dist ** 2)
 			ref_dist_sq += bsf * (ref_dist ** 2)
@@ -59,7 +72,7 @@ if ARGV.length > 0 and ARGV[0] == "--auto"
 		instr = File.open( f, "r" )
 		outstr = File.open( "./rmsd/" + f, "w" )
 
-		do_rmsd( instr, outstr, seq, gap )
+		do_rmsd( instr, outstr, seq, gap, false )
 
 		instr.close
 		outstr.close
@@ -67,5 +80,6 @@ if ARGV.length > 0 and ARGV[0] == "--auto"
 	
 
 else
-	do_rmsd( STDIN, STDOUT, 0, 0 )
+   
+	do_rmsd( StringIO.new( STDIN.readlines.join), STDOUT, 0, 0, ARGV[0] == "--tee" )
 end

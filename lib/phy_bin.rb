@@ -1,5 +1,4 @@
 
-
 def readphy( fh )
     fl = fh.readline
     # puts fl
@@ -7,39 +6,70 @@ def readphy( fh )
     lines = -1
     cols = -1
     names = []
-  
+
     if fl =~ /(\d+)\s+(\d+)/
-        #   puts "lines: #{$1}"
-        #   puts "cols: #{$2}"
-        lines = $1.to_i
-        cols = $2.to_i
+    #   puts "lines: #{$1}"
+    #   puts "cols: #{$2}"
+    lines = $1.to_i
+    cols = $2.to_i
     else
-        throw "bad file"
+    throw "bad file"
     end
 
     seqs = {}
 
     fh.each_line do |l|
-        name = nil
-        data = nil
-        if l =~ /(\w+)\s+(\S[\w\?\(\)\s]*)/
-            name = $1
-            data = $2
-        else
-            throw "bad line"
-        end
+    l.chomp!
+    name = nil
+    data = nil
+    if l =~ /(\w+)\s+(\S[\w\?\(\)\{\}\-\s]*)/
+        name = $1
+        data = $2
+    else
+        throw "bad line: >>'#{l}'<<"
+    end
 
-        # puts "#{name} => #{data}"
+    # puts "#{name} => #{data}"
 
-        #    if not data.length == cols
-        #      throw "wrong length #{data.length} #{cols}"
-        #    end
+    #    if not data.length == cols
+    #      throw "wrong length #{data.length} #{cols}"
+    #    end
 
-        data.sub!( /\{/, "(");
-        data.sub!( /\}/, ")");
+    fuckage = 1
+    if( fuckage == 1 ) 
+    # a = {01} b = {12} c = {89} d = {012} e = {02} f = {04} g= 
+    # {24} h = {26} i = {0123} j={23} k={123} l={013} m={13} n={023} o={03}  
+    # p={35} q={34}
+        data.upcase!
+        data.gsub!( /A/, "(01)" );
+        data.gsub!( /B/, "(12)" );
+        data.gsub!( /C/, "(89)" );
+        data.gsub!( /D/, "(012)" );
+        data.gsub!( /E/, "(02)" );
+        data.gsub!( /F/, "(04)" );
+        data.gsub!( /G/, "(24)" );
+        data.gsub!( /H/, "(26)" );
+        data.gsub!( /I/, "(0123)" );
+        data.gsub!( /J/, "(23)" );
+        data.gsub!( /K/, "(123)" );
+        data.gsub!( /L/, "(013)" );
+        data.gsub!( /M/, "(13)" );
+        #data.gsub!( /N/, "(023)" );
+        data.gsub!( /O/, "(03)" );
+        data.gsub!( /P/, "(35)" );
+        data.gsub!( /Q/, "(34)" );
+    elsif( fuckage == 2 ) 
+        data.gsub!( /A/, "0" );
+        data.gsub!( /C/, "1" );
+    end
+    data.gsub!( /\-/, "?" );
+    data.gsub!( /\{/, "(");
+    data.gsub!( /\}/, ")");
 
-        seqs[name] = data
-        names << name;
+        #puts( ">>>>>#{data}<<<<<" )
+
+    seqs[name] = data
+    names << name;
     end
 
     return [names, seqs, cols, lines];
@@ -68,28 +98,24 @@ end
 
 # convert ordinal feature in the range [0,n] to bit vector of length n
 def ord_to_bin( n, i )
-    if i > n
+    if i >= n
         throw "bad arguments #{n} < #{i}"
     end
 
-    throw "n <= 0" if n <= 0
+    throw "n <= 1" if n <= 1
 
-    if i == 0
-        return "0" * n;
-    else
-        return ("0" * (i - 1)) + "1" + ("0" * (n - i))
-    end
+    return ("0" * i) + "1" + ("0" * (n-i-1))
 end
 
 # convert set of ordinal feature in the range [0,n] to bit vector of length n
 def ordset_to_bin( n, s )
-    if s.max > n
+    if s.max >= n
         throw "bad arguments #{n} < #{s}"
     end
 
     out = ""
-  
-    1.upto(n) do |i|
+
+    0.upto(n-1) do |i|
         if s.index(i) != nil
             out += "1"
         else
@@ -109,7 +135,6 @@ def pad_right( n, s )
 end
 
 
-
 #
 # begin of script
 #
@@ -117,25 +142,31 @@ end
 
 (names, seqs, cols, lines) = readphy( $stdin )
 
-colmax = nil;
 
-$seqs_recode = {}
+$ncols = []
+$outcols = nil
 
-
-
-$ms_set_map = {}
-
+# count for each input column (multi-state sets count as one column each)
+# the number of required output columns.
+# Note: (01) needs two output columns!
 seqs.each do |name, seq|
-    puts "recode: '#{name}' => '#{seq}'"
+    #pointer in the input sequence
     i = 0
-    recode = "";
+    
+    # pointer in the output sequence (multi state sets increment this only by one)
+    col = 0;
+
     while i < seq.length
         c = seq[i,1];
 
-        if c =~ /\s/
-            i+=1;
-            next;
-        elsif c =~ /\(/
+#         if c =~ /\s/
+#             
+#             i+=1;
+#             next;
+#         els
+        if c =~ /\(/
+            # read multi state set
+            
             istart = i;
 
             while i < seq.length
@@ -147,62 +178,73 @@ seqs.each do |name, seq|
             end
 
             if i >= seq.length
+                puts "seq: '#{seq}'"
                 throw "could not find closing paren. pair started at #{istart}"
             end
-      
+        
             i+=1;
-
+            
             sset = seq[istart, i - istart];
 
-            puts "found multi state set: #{sset}"
             set = parse_ms_set(sset);
-            /set.each do |j|
-        puts j
-      end/
+    
+            # the number of required output columns is the maximum state plus one,
+            # because we need to encode '0's with an own column!
+            ncols = set.max + 1
+            
+            if( $ncols[col] == nil || $ncols[col] < ncols ) 
+                $ncols[col] = ncols;
+            end
+            
+            col += 1;
+            
+        elsif c =~ /\d/
+            ci = c.to_i
 
-            $ms_set_map["#{name}__#{recode.length}"] = set;
-            recode += set.max.to_s
-
-        else
-            recode += c;
+            # if we only have 0/1 we need one output column
+            if ci <= 1
+                ncols = 1;
+            else
+                ncols = ci+1;
+            end
+            
+            if $ncols[col] == nil || $ncols[col] < ncols
+                $ncols[col] = ncols;
+            end
+            
             i+= 1;
+            col += 1;
+            
+        elsif c == "?"
+            if $ncols[col] == nil
+                $ncols[col] = 1;
+            end
+            col += 1;
+            i += 1;
+        else
+           throw "bad input character: #{c}"  
         end
 
     end
-    $seqs_recode[name] = recode
+ #   $seqs_recode[name] = recode
+   
 end
 
 
 
-$seqs_recode.each do |name, seq|
-    puts "'#{name}' => '#{seq}'"
-    colmax = [0] * seq.length if colmax == nil
-  
-    0.upto(seq.length-1) do |i|
-        c = seq[i,1];
-        next if not c =~ /\d/
-
-        colmax[i] = [colmax[i], c.to_i].max;
-    end
-end
-
-colmax_str = ""
-colmax.each do |d|
-    colmax_str += d.to_s;
-end
-puts colmax_str
-
-#throw "end"
 
 len = 0;
 
-
 # get length of output sequences by summation of the colmax array
-colmax.each do |m|
-    if m > 0
-        len += m;
+xxx = "#"
+guide = ""
+$ncols.each do |m|
+    len += m
+    guide += (xxx * m)
+    if( xxx == "#" )
+        xxx = ".";
     else
-        len += 1;
+        xxx = "#"
     end
 end
 
@@ -214,54 +256,78 @@ names.each do |name|
 end
 
 pad_width += 2;
-
+puts( (" " * pad_width) + guide )
 
 
 #puts "len: #{len}"
 puts "#{seqs.keys.length} #{len}"
 
-names.each do |name|
-    seq = $seqs_recode[name]
+
+seqs.each do |name, seq|
     outseq = ""
 
-    throw "bad seq length #{seq.length} #{cols}" if seq.length != cols
-
-    
-    0.upto(seq.length - 1) do |i|
-        ms_set = $ms_set_map["#{name}__#{i}"]
-
-        if ms_set != nil
+    i = 0
+    col = 0;
+    while i < seq.length
+        c = seq[i,1]
+#         if c =~ /\s/
+#             i += 1;
+#             next;
+#         els
+        if c =~ /\(/
+          
+            # read multi state set
+            
             oldlen = outseq.length
-            outseq += ordset_to_bin(colmax[i], ms_set);
+            istart = i;
 
-#           sanity check of last output against colmax array
-            if (outseq.length - oldlen) != [colmax[i],1].max
+            while i < seq.length
+                c2 = seq[i,1];
+                break if c2 =~ /\)/;
+                i+=1;
+            end
+
+            if i >= seq.length
+                puts "seq: '#{seq}'"
+                throw "could not find closing paren. pair started at #{istart}"
+            end
+        
+            i+=1;
+            
+            sset = seq[istart, i - istart];
+            set = parse_ms_set(sset);
+            
+            outseq += ordset_to_bin($ncols[col], set);
+            
+            if (outseq.length - oldlen) != $ncols[col]
                 throw "bad insert at #{outseq}"
             end
+            col += 1;
+
         else
+            
             oldlen = outseq.length
-            c = seq[i,1]
             if c =~ /\d/
                 d = c.to_i
-#                throw "colmax == 0" if colmax[i] == 0
-                
-                if colmax[i] <= 1
-#                   very hysterical double check...
-                    throw "bad entry in colmax" if colmax[i] < d;
-
+    #                throw "colmax == 0" if colmax[i] == 0
+            
+                if $ncols[col] == 1
                     outseq += "#{d}";
                 else
-                    outseq += ord_to_bin(colmax[i], d);
+                    outseq += ord_to_bin($ncols[col], d);
                 end
 
             else
-                outseq += c * [colmax[i],1].max;
+                outseq += c * $ncols[col];
             end
-
-#            sanity check of last output against colmax array
-            if (outseq.length - oldlen) != [colmax[i],1].max
+            
+            if (outseq.length - oldlen) != $ncols[col]
                 throw "bad insert at #{outseq}"
             end
+            col += 1;
+            i += 1;
+    #            sanity check of last output against colmax array
+          
         end
     end
 

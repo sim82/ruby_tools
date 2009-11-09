@@ -38,11 +38,39 @@ def readphy( fh )
 end
 
 
+infile = ARGV[0]
+ifh = File.open( infile, "r" )
+(names,seqs,cols,lines) = readphy( ifh )
+ifh.close();
 
-(names,seqs,cols,lines) = readphy( $stdin )
+ofh1 = File.open( "#{infile}.a.afa", "w" );
+
+ofh2 = File.open( "#{infile}.q.afa", "w" );
+
 
 names.each do |name|
-	#seq = seqs[name].upcase.tr( '^ACGT', "" )
-	seq = seqs[name].upcase.tr( '-?', "" )
-	puts( ">#{name}\n#{seq}" )
+	nng = 0;
+	seq = seqs[name].upcase
+	0.upto( seq.length() - 1 ) do |i|
+		c = seq[i,1];
+		if( !( c == '-' || c == '?' || c == 'N') )
+			nng+=1;
+		end
+	end
+	
+	puts( nng );
+	
+	if( nng == 100 || nng == 200 )
+		name = "qs-#{name}";
+		ofh = ofh2;
+	else
+	
+		ofh = ofh1;
+	end
+	
+	
+	ofh.puts( "> #{name}\n#{seq}" )
 end
+
+ofh1.close
+ofh2.close
