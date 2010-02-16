@@ -1,0 +1,5 @@
+acc = nil
+
+$stdin.each_line do |l|
+
+end

@@ -3,18 +3,25 @@
 require( 'stringio' )
 
 def do_rmsd( instr, outstr, seq, gap, tee ) 
-    node_dist_sq = 0.0
-    ref_dist_sq = 0.0
-    ref_dist_norm_sq = 0.0
+    node_dist_sq = {}
+    ref_dist_sq = {}
+    ref_dist_norm_sq = {}
     
-    taxon = nil
-    oinpos = nil
+    #taxon = nil
+    #oinpos = nil
     
     
-    nreps = 0
+    nreps = {}
     instr.each_line do |l|
-        if l =~ /^\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/
-            nreps += $1.to_i
+        if l =~ /^(\S+)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/
+            if nreps[$1] == nil
+                nreps[$1] = 0;
+            end
+            
+            nreps[$1] += $2.to_i
+            node_dist_sq[$1] = 0.0;
+            ref_dist_sq[$1] = 0.0;
+            ref_dist_norm_sq[$1] = 0.0;
         end
     end
     instr.rewind
@@ -35,22 +42,24 @@ def do_rmsd( instr, outstr, seq, gap, tee )
             diam_ref = $8.to_f
             #diam_olt = $9.to_f
             
-            bsf = bs / nreps.to_f
+            bsf = bs / nreps[taxon].to_f
             
-            node_dist_sq += bsf * (node_dist ** 2)
-            ref_dist_sq += bsf * (ref_dist ** 2)
-            ref_dist_norm_sq += bsf * (ref_dist_norm ** 2)
+            node_dist_sq[taxon] += bsf * (node_dist ** 2)
+            ref_dist_sq[taxon] += bsf * (ref_dist ** 2)
+            ref_dist_norm_sq[taxon] += bsf * (ref_dist_norm ** 2)
         else
             throw "bad line in input file"
         end
     end
     
+    nreps.each_key do |k|
+        mean_node_dist = Math.sqrt(node_dist_sq[k])
+        mean_ref_dist = Math.sqrt(ref_dist_sq[k])
+        mean_ref_dist_norm = Math.sqrt(ref_dist_norm_sq[k])
+        outstr.puts( "#{seq}\t#{gap}\t#{k}\t*NONE*\t#{mean_node_dist}\t#{mean_ref_dist}\t#{mean_ref_dist_norm}" );
+    end
     
-    mean_node_dist = Math.sqrt(node_dist_sq)
-    mean_ref_dist = Math.sqrt(ref_dist_sq)
-    mean_ref_dist_norm = Math.sqrt(ref_dist_norm_sq)
     
-    outstr.puts( "#{seq}\t#{gap}\t#{taxon}\t#{oinpos}\t#{mean_node_dist}\t#{mean_ref_dist}\t#{mean_ref_dist_norm}" );
 end
 
 

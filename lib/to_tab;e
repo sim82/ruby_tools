@@ -1,0 +1,3 @@
+$stdin.each_line do |l|
+
+end
