@@ -26,7 +26,7 @@ $stdin.each_line do |l|
 		seq = $1;
 	elsif l =~ /^0\s+0\s+(\S+)/
 		seq = $1;
-	elsif l =~ /^\S+\s+200_60.+\s(\S+)$/
+	elsif l =~ /^\S+\s+\d+_\d+.+\s(\S+)$/
 		seq = $1
 	elsif l =~ /^(\S+)/
 		seq = $1;

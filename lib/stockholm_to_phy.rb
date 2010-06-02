@@ -4,26 +4,42 @@ data = {}
 len = nil
 maxnlen = 0
 $stdin.each_line do |l|
-    if l =~ /^(\S+)\s+(\S+)$/
+	if l =~ /^#/
+		next
+    elsif l =~ /^(\S+)\s+(\S+)$/
         n = $1
         d = $2.gsub( /\./, "-" )
-        names << n
-        data[n] = d
         
-        maxnlen = [maxnlen, n.length].max
+		if data[n] == nil
+			names << n
+			data[n] = d
+			
+			maxnlen = [maxnlen, n.length].max
+		else
+			data[n] << d
+		end
         
-        if len != nil && len != d.length
-            throw "not equal seq lengths"
-        end
         
-        len = d.length
     end
     
 end
 
-puts ( "#{names.length} #{len}" )
+
+
+
+
+first = true;
 
 names.each do |n|
-    puts( "#{n}#{" " * (maxnlen + 1 - n.length)}#{data[n]}")
+	
+	
+	seq = data[n]
+	
+	if first
+		puts ( "#{names.length} #{seq.length}" )
+		first = false
+	end
+	
+	puts( "#{n}#{" " * (maxnlen + 1 - n.length)}#{seq}")
 end
 

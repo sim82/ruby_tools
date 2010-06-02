@@ -86,8 +86,8 @@ end
 hph = File.open( ARGV[0] )
 hfa = File.open( ARGV[1] )
 
-(fa_names, fa_seqs, fa_lens,fa_rows) = readfa( $stdin )
-(ph_names, ph_seqs, ph_cols, ph_lines) = readphy( $stdin )
+(fa_names, fa_seqs, fa_lens,fa_rows) = readfa( hfa )
+(ph_names, ph_seqs, ph_cols, ph_lines) = readphy( hph )
 
 
 max_name = (fa_names + ph_names).map{ |n| n.length }.max
@@ -112,5 +112,5 @@ ph_names.each do |name|
 end
 
 fa_names.each do |name|
-    puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", ph_cols, fa_seqs[name]}" )}" )
+    puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", ph_cols, fa_seqs[name])}" )
 end
