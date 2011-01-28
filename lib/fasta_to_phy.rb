@@ -14,6 +14,8 @@ def readfa( fh )
     minlen = 1000000
     maxlen = -1
     
+	maxcols = 0;
+	
     fh.each_line do |l|
         name = nil
         data = nil
@@ -29,18 +31,18 @@ def readfa( fh )
             rows += 1
             curname = $1;
             curseq = ""
-            
+            maxcols = [maxcols, curseq.length].max
         elsif curname != nil
             l.gsub!( /\s/, "" )
             curseq += l
         end
     end
-    
+    maxcols = [maxcols, curseq.length].max
     seqs[curname] = curseq;
     names << curname;
     lens << curseq.length
     
-    return [names, seqs, lens, rows];
+    return [names, seqs, lens, rows, maxcols];
 end
 
 
@@ -83,14 +85,14 @@ def readphy( fh )
     return [names, seqs, cols, lines];
 end
 
-hph = File.open( ARGV[0] )
-hfa = File.open( ARGV[1] )
+#hph = File.open( ARGV[0] )
+#hfa = File.open( ARGV[1] )
 
-(fa_names, fa_seqs, fa_lens,fa_rows) = readfa( $stdin )
-(ph_names, ph_seqs, ph_cols, ph_lines) = readphy( $stdin )
+(fa_names, fa_seqs, fa_lens,fa_rows,fa_cols) = readfa( $stdin )
+#(ph_names, ph_seqs, ph_cols, ph_lines) = readphy( $stdin )
 
 
-max_name = (fa_names + ph_names).map{ |n| n.length }.max
+max_name = (fa_names).map{ |n| n.length }.max
 
 #puts( max_name );
 
@@ -105,12 +107,12 @@ end
 # lens.each do |l|
 #     #puts l
 # end
-puts "#{fa_names.length + ph_names.length} #{ph_cols}"
+puts "#{fa_names.length} #{fa_cols}"
 
-ph_names.each do |name|
-    puts( "#{pad_right( " ", max_name + 1, name)}#{ph_seqs[name]}" )
-end
+#ph_names.each do |name|
+#    puts( "#{pad_right( " ", max_name + 1, name)}#{ph_seqs[name]}" )
+#end
 
 fa_names.each do |name|
-    puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", ph_cols, fa_seqs[name]}" )}" )
+    puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", fa_cols, fa_seqs[name] )}" )
 end
