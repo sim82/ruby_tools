@@ -85,10 +85,10 @@ def readphy( fh )
     return [names, seqs, cols, lines];
 end
 
-#hph = File.open( ARGV[0] )
-#hfa = File.open( ARGV[1] )
+hfa = File.open( ARGV[0], "r" )
+hph = File.open( ARGV[1], "w" )
 
-(fa_names, fa_seqs, fa_lens,fa_rows,fa_cols) = readfa( $stdin )
+(fa_names, fa_seqs, fa_lens,fa_rows,fa_cols) = readfa( hfa )
 #(ph_names, ph_seqs, ph_cols, ph_lines) = readphy( $stdin )
 
 
@@ -107,12 +107,12 @@ end
 # lens.each do |l|
 #     #puts l
 # end
-puts "#{fa_names.length} #{fa_cols}"
+hph.puts "#{fa_names.length} #{fa_cols}"
 
 #ph_names.each do |name|
 #    puts( "#{pad_right( " ", max_name + 1, name)}#{ph_seqs[name]}" )
 #end
 
 fa_names.each do |name|
-    puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", fa_cols, fa_seqs[name] )}" )
+    hph.puts( "#{pad_right( " ", max_name + 1, name)}#{pad_right( "-", fa_cols, fa_seqs[name] )}" )
 end
