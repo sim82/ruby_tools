@@ -39,10 +39,22 @@ end
 
 
 
-(names,seqs,cols,lines) = readphy( $stdin )
+ifh=$stdin
+ofh=$stdout
+
+if ARGV.length == 2
+  ifh = File.open( ARGV[0], "r" )
+  ofh = File.open( ARGV[1], "w" )
+end
+
+(names,seqs,cols,lines) = readphy( ifh )
 
 names.each do |name|
 	#seq = seqs[name].upcase.tr( '^ACGT', "" )
 	seq = seqs[name].upcase.tr( '-?', "" )
-	puts( ">#{name}\n#{seq}" )
+	ofh.puts( ">#{name}\n#{seq}" )
+end
+
+if ofh != $stdout
+  ofh.close
 end
